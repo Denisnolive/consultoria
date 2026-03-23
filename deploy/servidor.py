@@ -13,6 +13,11 @@ def get_env(var_name: str) -> str:
 
 OPENAI_API_KEY = get_env("OPENAI_API_KEY")
 
+print("==> Iniciando servidor...")
+print(f"==> PORT: {os.environ.get('PORT')}")
+print(f"==> GOOGLE_CREDENTIALS_JSON definida: {bool(os.environ.get('GOOGLE_CREDENTIALS_JSON'))}")
+print(f"==> OPENAI_API_KEY definida: {bool(os.environ.get('OPENAI_API_KEY'))}")
+
 # Suporte local (arquivo) e produção (JSON na variável de ambiente)
 google_credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
 google_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
@@ -74,5 +79,11 @@ agent_os = AgentOS(name="Agente PDF", agents=[agent])
 app = agent_os.get_app()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    agent_os.serve(app="servidor:app", host="0.0.0.0", port=port, reload=False)
+    try:
+        port = int(os.environ.get("PORT", 10000))
+        agent_os.serve(app="servidor:app", host="0.0.0.0", port=port, reload=False)
+    except Exception as e:
+        import traceback
+        print("ERRO AO INICIAR SERVIDOR:")
+        traceback.print_exc()
+        raise
