@@ -47,4 +47,4 @@ if __name__ == "__main__":
     load_pdfs_from_drive(knowledge)
 
     # 2. Sobe o servidor AgentOS
-    agent_os.serve(app="servidor:app", host="localhost", port=7777, reload=True)
+    agent_os.serve(app="servidor:app", host="0.0.0.0", port=10000, reload=True)
