@@ -1,4 +1,6 @@
 import os
+import json
+import tempfile
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -10,9 +12,23 @@ def get_env(var_name: str) -> str:
     return value
 
 OPENAI_API_KEY = get_env("OPENAI_API_KEY")
-GOOGLE_CREDENTIALS = get_env("GOOGLE_CREDENTIALS_PATH")
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIALS
+# Suporte local (arquivo) e produção (JSON na variável de ambiente)
+google_credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+google_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+if google_credentials_path:
+    # Ambiente local — usa o arquivo diretamente
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials_path
+elif google_credentials_json:
+    # Produção (Render) — cria arquivo temporário com o conteúdo JSON
+    credentials_data = json.loads(google_credentials_json)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w")
+    json.dump(credentials_data, tmp)
+    tmp.close()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+else:
+    raise ValueError("Nenhuma credencial Google definida!")
 
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb

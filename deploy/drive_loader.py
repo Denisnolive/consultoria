@@ -12,14 +12,22 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 # ── SERVICE ─────────────────────────────────────────────────────
 
 def get_drive_service():
-    credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
+    credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+    credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
-    if not os.path.exists(credentials_path):
-        raise FileNotFoundError(f"Credencial não encontrada: {credentials_path}")
-
-    creds = service_account.Credentials.from_service_account_file(
-        credentials_path, scopes=SCOPES
-    )
+    if credentials_path and os.path.exists(credentials_path):
+        # Ambiente local — usa o arquivo diretamente
+        creds = service_account.Credentials.from_service_account_file(
+            credentials_path, scopes=SCOPES
+        )
+    elif credentials_json:
+        # Produção (Render) — usa o conteúdo JSON da variável de ambiente
+        credentials_info = json.loads(credentials_json)
+        creds = service_account.Credentials.from_service_account_info(
+            credentials_info, scopes=SCOPES
+        )
+    else:
+        raise ValueError("Nenhuma credencial Google definida!")
 
     return build("drive", "v3", credentials=creds)
 
