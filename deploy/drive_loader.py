@@ -10,7 +10,7 @@ from googleapiclient.http import MediaIoBaseDownload
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 # ── SERVICE ─────────────────────────────────────────────────────
-
+# credenciais
 def get_drive_service():
     credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
     credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
