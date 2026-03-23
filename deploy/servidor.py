@@ -74,4 +74,5 @@ agent_os = AgentOS(name="Agente PDF", agents=[agent])
 app = agent_os.get_app()
 
 if __name__ == "__main__":
-    agent_os.serve(app="servidor:app", host="0.0.0.0", port=10000, reload=False)
+    port = int(os.environ.get("PORT", 10000))
+    agent_os.serve(app="servidor:app", host="0.0.0.0", port=port, reload=False)
