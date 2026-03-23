@@ -9,11 +9,14 @@ apply_page_config()   # ← PRIMEIRA instrução st.* do script
 import requests
 import json
 import streamlit as st
+import os
 
 from styles import apply_global_styles, render_agent_header
 
+
 AGENT_ID = "agentepdf"
-ENDPOINT = f"http://localhost:7777/agents/{AGENT_ID}/runs"
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:7777")
+ENDPOINT = f"{BACKEND_URL}/agents/{AGENT_ID}/ru
 
 # 2 - Conexão com o Agno (SERVER) =========================================
 
