@@ -13,5 +13,11 @@ dependencies = [
     "anthropic>=0.50.0",
     "python-dotenv>=1.1.0",
     "agno>=2.5.10",
+    "sqlalchemy>=2.0.48",
+    "chromadb>=1.5.5",
+    "openai>=2.29.0",
+    "httpx>=0.28.1",
+    "uvicorn>=0.42.0",
+    "fastapi>=0.135.2",
 ]
  
