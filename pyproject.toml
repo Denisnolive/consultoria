@@ -1,0 +1,16 @@
+[project]
+name = "consultoria"
+version = "0.1.0"
+description = "Streamlit Agent com leitura de PDFs do Google Drive"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "streamlit>=1.45.0",
+    "google-api-python-client>=2.160.0",
+    "google-auth>=2.38.0",
+    "google-auth-httplib2>=0.2.0",
+    "pypdf>=5.4.0",
+    "anthropic>=0.50.0",
+    "python-dotenv>=1.1.0",
+]
+ 
