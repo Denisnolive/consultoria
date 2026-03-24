@@ -53,12 +53,23 @@ vector_db = ChromaDb(
 
 knowledge = Knowledge(vector_db=vector_db)
 
-# 🔥 Evita reprocessamento
-if not os.path.exists("tmp/chromadb"):
-    print("[INIT] Carregando PDFs...")
-    load_pdfs_from_drive(knowledge)
+# Verifica se a base tem documentos carregados
+def base_tem_documentos() -> bool:
+    try:
+        collection = vector_db.client.get_collection("pdf_agent")
+        count = collection.count()
+        print(f"[INIT] Documentos na base: {count}")
+        return count > 0
+    except Exception as e:
+        print(f"[INIT] Coleção não encontrada: {e}")
+        return False
+
+if base_tem_documentos():
+    print("[INIT] Base já existente com dados, pulando carregamento.")
 else:
-    print("[INIT] Base já existente")
+    print("[INIT] Base vazia, carregando PDFs...")
+    load_pdfs_from_drive(knowledge)
+
 
 # DB
 db = SqliteDb(session_table="agent_session", db_file="tmp/agent.db")

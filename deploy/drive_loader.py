@@ -63,11 +63,35 @@ def download(service, file_id):
 
 def load_pdfs_from_drive(knowledge, folder_id=None):
     from agno.knowledge.reader.pdf_reader import PDFReader
+    import hashlib
 
     folder_id = folder_id or os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+    print(f"[Drive] Folder ID: {folder_id}")
 
     service = get_drive_service()
+    print(f"[Drive] Serviço criado com sucesso")
+
     files = list_pdfs(service, folder_id)
+    print(f"[Drive] Arquivos encontrados: {len(files)}")
 
     if not files:
-        print("[Embedding] Concluído com sucesso")
+        print("[Drive] Nenhum PDF encontrado na pasta!")
+        return
+
+    reader = PDFReader()
+
+    for file in files:
+        print(f"[Drive] Processando: {file['name']}")
+        try:
+            pdf_bytes = download(service, file["id"])
+            documents = reader.read(io.BytesIO(pdf_bytes), name=file["name"])
+            if documents:
+                content_hash = hashlib.md5(file["id"].encode()).hexdigest()
+                knowledge.vector_db.insert(content_hash, documents)
+                print(f"[Drive] ✅ Carregado: {file['name']} ({len(documents)} chunks)")
+            else:
+                print(f"[Drive] ⚠️ Vazio: {file['name']}")
+        except Exception as e:
+            print(f"[Drive] ❌ Erro: {file['name']}: {e}")
+
+    print("[Embedding] Concluído com sucesso")

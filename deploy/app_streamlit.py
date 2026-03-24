@@ -13,7 +13,7 @@ import streamlit as st
 from styles import apply_global_styles, render_agent_header
 
 AGENT_ID = "agentepdf"
-ENDPOINT = f"https://consultoria-1ulg.onrender.com/agents{AGENT_ID}/runs"
+ENDPOINT = f"https://consultoria-1ulg.onrender.com/agents/{AGENT_ID}/runs"
 
 # 2 - Conexão com o Agno (SERVER) =========================================
 
