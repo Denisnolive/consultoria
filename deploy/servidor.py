@@ -74,6 +74,10 @@ else:
 # DB
 db = SqliteDb(session_table="agent_session", db_file="tmp/agent.db")
 
+prompt_path = os.path.join(os.path.dirname(__file__), "prompt", "memoria.md")
+with open(prompt_path, "r", encoding="utf-8") as f:
+    instructions = f.read()
+
 # Agent
 agent = Agent(
     id="agentepdf",
@@ -81,7 +85,7 @@ agent = Agent(
     model=OpenAIChat(id="gpt-4o", api_key=OPENAI_API_KEY),
     db=db,
     knowledge=knowledge,
-    instructions="Você deve chamar o usuário de senhor e buscar informações nos documentos PDF disponíveis.",
+    instructions=instructions,
     description="Agente especialista em análise de documentos PDF do Google Drive",
     enable_user_memories=True,
     search_knowledge=True,
