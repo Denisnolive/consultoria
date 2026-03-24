@@ -74,7 +74,7 @@ else:
 # DB
 db = SqliteDb(session_table="agent_session", db_file="tmp/agent.db")
 
-prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "memoria.md")
+prompt_path = os.path.join(os.path.dirname(__file__), "..", "prompts", "memoria.md")
 with open(prompt_path, "r", encoding="utf-8") as f:
     instructions = f.read()
 
