@@ -20,7 +20,8 @@ ENDPOINT = f"https://consultoria-1ulg.onrender.com/agents/{AGENT_ID}/runs"
 def get_response_stream(message: str):
     response = requests.post(
         url=ENDPOINT,
-        data={"message": message, "stream": "true"},
+        # LINHA ALTERADA: 'data' substituído por 'json' e "true" (string) por True (booleano)
+        json={"message": message, "stream": True}, 
         stream=True,
     )
     for line in response.iter_lines():
