@@ -81,6 +81,8 @@ agent = Agent(
     model=OpenAIChat(id="gpt-4o", api_key=OPENAI_API_KEY),
     db=db,
     knowledge=knowledge,
+    instructions="Você deve chamar o usuário de senhor e buscar informações nos documentos PDF disponíveis.",
+    description="Agente especialista em análise de documentos PDF do Google Drive",
     enable_user_memories=True,
     search_knowledge=True,
     num_history_runs=3,
