@@ -20,10 +20,11 @@ ENDPOINT = f"https://consultoria-1ulg.onrender.com/agents/{AGENT_ID}/runs"
 def get_response_stream(message: str):
     response = requests.post(
         url=ENDPOINT,
-        # LINHA ALTERADA: 'data' substituído por 'json' e "true" (string) por True (booleano)
-        json={"message": message, "stream": True}, 
+        data={"message": message, "stream": "true"},
         stream=True,
+        timeout=120,
     )
+    response.raise_for_status()
     for line in response.iter_lines():
         if line and line.startswith(b"data: "):
             try:
@@ -62,15 +63,35 @@ if prompt := st.chat_input("Digite sua mensagem..."):
     with st.chat_message("assistant"):
         placeholder = st.empty()
         full_response = ""
+        completed_response = ""
+        try:
+            for event in get_response_stream(prompt):
+                event_type = event.get("event")
+                if event_type == "RunContent":
+                    chunk = event.get("content", "")
+                    if chunk:
+                        full_response += chunk
+                        placeholder.markdown(full_response + "▌")
+                elif event_type == "RunCompleted":
+                    completed_response = event.get("content", "") or ""
+        except requests.RequestException as exc:
+            full_response = f"Erro ao consultar o agente: {exc}"
+            placeholder.error(full_response)
+        except Exception as exc:
+            full_response = f"Erro inesperado: {exc}"
+            placeholder.error(full_response)
 
-        for event in get_response_stream(prompt):
-            if event.get("event") == "RunContent":
-                chunk = event.get("content", "")
-                if chunk:
-                    full_response += chunk
-                    placeholder.markdown(full_response + "▌")
+        if not full_response and completed_response:
+            full_response = completed_response
 
-        placeholder.markdown(full_response)
+        if not full_response:
+            full_response = (
+                "O agente não retornou conteúdo nesta execução. "
+                "Tente novamente em alguns segundos."
+            )
+            placeholder.warning(full_response)
+        elif not full_response.startswith("Erro"):
+            placeholder.markdown(full_response)
 
     st.session_state.messages.append({
         "role": "assistant",
