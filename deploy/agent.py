@@ -3,7 +3,7 @@ import requests
 import json
 from pprint import pprint
 
-AGENT_ID = "agentepdf"
+AGENT_ID = "agentepostgres"
 ENDPOINT = f"http://localhost:7777/agents/{AGENT_ID}/runs"
 
 # 2 - Conexão com o Agno (SERVER) =========================================

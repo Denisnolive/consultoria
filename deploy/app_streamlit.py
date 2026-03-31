@@ -1,23 +1,36 @@
-# 1 - IMPORTS ===========================================================
-# IMPORTANTE: apply_page_config() deve ser chamada ANTES de qualquer outro
-# comando st.* — por isso o import e chamada ficam no topo, separados.
+from pathlib import Path
+import json
+import logging
+import os
+import sys
+
+APP_DIR = Path(__file__).resolve().parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
 
 from styles import apply_page_config
-apply_page_config()   # ← PRIMEIRA instrução st.* do script
 
-# Demais imports APÓS o set_page_config
+apply_page_config()
+
 import requests
-import json
 import streamlit as st
 
 from styles import apply_global_styles, render_agent_header
 
-AGENT_ID = "agentepdf"
-ENDPOINT = f"https://consultoria-1ulg.onrender.com/agents/{AGENT_ID}/runs"
+AGENT_ID = "agentepostgres"
+BASE_BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:10000").rstrip("/")
+ENDPOINT = f"{BASE_BACKEND_URL}/agents/{AGENT_ID}/runs"
+LOGGER = logging.getLogger("consultoria.app_streamlit")
 
-# 2 - Conexão com o Agno (SERVER) =========================================
+if not LOGGER.handlers:
+    logging.basicConfig(
+        level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    )
+
 
 def get_response_stream(message: str):
+    LOGGER.info("Enviando mensagem ao agente. endpoint=%s", ENDPOINT)
     response = requests.post(
         url=ENDPOINT,
         data={"message": message, "stream": "true"},
@@ -25,45 +38,45 @@ def get_response_stream(message: str):
         timeout=120,
     )
     response.raise_for_status()
+
     for line in response.iter_lines():
-        if line and line.startswith(b"data: "):
-            try:
-                yield json.loads(line[6:])
-            except json.JSONDecodeError:
-                continue
+        if not line or not line.startswith(b"data: "):
+            continue
+
+        try:
+            payload = line[6:].decode("utf-8")
+            event = json.loads(payload)
+            yield event
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            LOGGER.warning("Falha ao decodificar evento SSE do backend")
+            continue
 
 
-# 3 - Layout =============================================================
-
-apply_global_styles()          # injeta o CSS global
-render_agent_header(           # header fixo no topo
+apply_global_styles()
+render_agent_header(
     agent_name="Consultor",
-    agent_description="Especialista em Tasy EMR",
+    agent_description="Especialista em Parâmetros Tasy",
     status="Online",
 )
 
-# 3.1 - Histórico ─────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 3.2 - Renderiza histórico existente ─────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 3.3 - Input ─────────────────────────────────────────────────────────────
 if prompt := st.chat_input("Digite sua mensagem..."):
-
-    # Mensagem do usuário
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Resposta do assistente (streaming)
     with st.chat_message("assistant"):
         placeholder = st.empty()
         full_response = ""
         completed_response = ""
+        tool_error_message = ""
+
         try:
             for event in get_response_stream(prompt):
                 event_type = event.get("event")
@@ -74,8 +87,19 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                         placeholder.markdown(full_response + "▌")
                 elif event_type == "RunCompleted":
                     completed_response = event.get("content", "") or ""
+                elif event_type == "ToolCallStarted":
+                    tool_name = event.get("tool", {}).get("tool_name", "tool")
+                    placeholder.info(f"Executando ferramenta: {tool_name}")
+                elif event_type == "ToolCallError":
+                    tool_name = event.get("tool", {}).get("tool_name", "tool")
+                    tool_error_message = event.get("error", "") or "Falha na execucao da ferramenta."
+                    LOGGER.error("Ferramenta com erro: %s - %s", tool_name, tool_error_message)
+
         except requests.RequestException as exc:
-            full_response = f"Erro ao consultar o agente: {exc}"
+            full_response = (
+                "Erro ao consultar o backend do agente. "
+                f"Verifique a variavel BACKEND_URL e a disponibilidade do servico. Detalhe: {exc}"
+            )
             placeholder.error(full_response)
         except Exception as exc:
             full_response = f"Erro inesperado: {exc}"
@@ -84,16 +108,18 @@ if prompt := st.chat_input("Digite sua mensagem..."):
         if not full_response and completed_response:
             full_response = completed_response
 
+        if not full_response and tool_error_message:
+            full_response = f"Erro ao executar consulta/ferramenta: {tool_error_message}"
+
         if not full_response:
-            full_response = (
-                "O agente não retornou conteúdo nesta execução. "
-                "Tente novamente em alguns segundos."
-            )
+            full_response = "O agente nao retornou conteudo nesta execucao."
             placeholder.warning(full_response)
         elif not full_response.startswith("Erro"):
             placeholder.markdown(full_response)
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": full_response,
-    })
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": full_response,
+        }
+    )
