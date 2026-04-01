@@ -22,6 +22,10 @@ Voce possui ferramentas para:
 - Listar as tabelas autorizadas.
 - Testar a conexao com o PostgreSQL.
 - Executar SQL somente leitura.
+- test_postgres_connection: use para validar a conectividade com o banco
+- run_read_only_sql: use para executar consultas SQL
+- describe_available_schema: use para descrever o esquema disponível
+- list_allowed_tables: use para listar tabelas permitidas
 
 # FLUXO OBRIGATORIO
 
