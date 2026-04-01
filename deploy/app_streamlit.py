@@ -18,7 +18,7 @@ import streamlit as st
 from styles import apply_global_styles, render_agent_header
 
 AGENT_ID = "agentepostgres"
-BASE_BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:10000").rstrip("/")
+BASE_BACKEND_URL = os.getenv("BACKEND_URL", "https://consultoria-1ulg.onrender.com").rstrip("/")
 ENDPOINT = f"{BASE_BACKEND_URL}/agents/{AGENT_ID}/runs"
 LOGGER = logging.getLogger("consultoria.app_streamlit")
 
