@@ -18,7 +18,7 @@ import streamlit as st
 from styles import apply_global_styles, render_agent_header
 
 AGENT_ID = "agentepostgres"
-BASE_BACKEND_URL = os.getenv("BASE_BACKEND_URL", "https://consultoria-1ulg.onrender.com").rstrip("/")
+BASE_BACKEND_URL = os.getenv("BACKEND_URL", "https://consultoria-1ulg.onrender.com").rstrip("/")
 ENDPOINT = f"{BASE_BACKEND_URL}/agents/{AGENT_ID}/runs"
 LOGGER = logging.getLogger("consultoria.app_streamlit")
 
@@ -31,16 +31,37 @@ if not LOGGER.handlers:
 
 def get_response_stream(message: str):
     LOGGER.info("Enviando mensagem ao agente. endpoint=%s", ENDPOINT)
-    response = requests.post(
-        url=ENDPOINT,
-        data={"message": message, "stream": "true"},
-        stream=True,
-        timeout=120,
-    )
-    response.raise_for_status()
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                url=ENDPOINT,
+                data={"message": message, "stream": "true"},
+                stream=True,
+                timeout=120,
+            )
+            if response.status_code == 429:
+                wait = 2 ** attempt  # 1s, 2s, 4s
+                LOGGER.warning("429 recebido, aguardando %ss...", wait)
+                time.sleep(wait)
+                continue
+            response.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(2 ** attempt)
 
     for line in response.iter_lines():
         if not line or not line.startswith(b"data: "):
+            continue
+        try:
+            payload = line[6:].decode("utf-8")
+            event = json.loads(payload)
+            yield event
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            LOGGER.warning("Falha ao decodificar evento SSE do backend")
             continue
 
         try:
